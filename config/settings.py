@@ -11,7 +11,7 @@ load_dotenv()
 def _get_env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
-
+# xx
 IG_USER_ID = _get_env("IG_USER_ID")
 IG_ACCESS_TOKEN = _get_env("IG_ACCESS_TOKEN")
 GEMINI_API_KEY = _get_env("GEMINI_API_KEY")
