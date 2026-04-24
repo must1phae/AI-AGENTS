@@ -33,6 +33,18 @@ Si Gemini retourne une erreur de quota (429), l'agent bascule automatiquement su
 
 ## Planification
 
+### Option Windows (Task Scheduler)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scheduler\register_windows_task.ps1 -StartTime 09:00
+```
+
+Verifier la tache:
+
+```powershell
+schtasks /Query /TN "AI-AGENTS-DailyPost" /V /FO LIST
+```
+
 ### Option simple: cron
 
 ```bash
