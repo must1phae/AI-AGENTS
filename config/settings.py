@@ -21,6 +21,8 @@ BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
 DEFAULT_IMAGE_URL = os.getenv("DEFAULT_IMAGE_URL", "").strip()
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0").strip()
+FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "").strip()
+PUBLISH_TARGET = os.getenv("PUBLISH_TARGET", "instagram").strip().lower()
 
 NICHE = os.getenv("NICHE", "AI et technologie").strip()
 TONE = os.getenv("TONE", "viral").strip()
@@ -37,6 +39,8 @@ SETTINGS: dict[str, Any] = {
     "GEMINI_MODEL": GEMINI_MODEL,
     "DEFAULT_IMAGE_URL": DEFAULT_IMAGE_URL,
     "REDIS_URL": REDIS_URL,
+    "FACEBOOK_PAGE_ID": FACEBOOK_PAGE_ID,
+    "PUBLISH_TARGET": PUBLISH_TARGET,
     "NICHE": NICHE,
     "TONE": TONE,
     "MAX_HASHTAGS": MAX_HASHTAGS,

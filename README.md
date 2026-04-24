@@ -1,6 +1,6 @@
 # AI Instagram Agent
 
-Bot Python pour générer une caption avec Gemini, l'optimiser, puis publier un post image via l'Instagram Graph API.
+Bot Python pour générer une caption avec Gemini, l'optimiser, puis publier un post image via l'Instagram Graph API ou une Page Facebook.
 
 ## Prérequis
 
@@ -29,6 +29,8 @@ python main.py --image-url https://example.com/image.jpg
 
 Sans argument, le script utilise `DEFAULT_IMAGE_URL`.
 
+Si Gemini retourne une erreur de quota (429), l'agent bascule automatiquement sur une caption locale de secours pour ne pas bloquer le flux.
+
 ## Planification
 
 ### Option simple: cron
@@ -51,3 +53,5 @@ celery -A scheduler.tasks beat --loglevel=info
 - `GEMINI_API_KEY`: clé API Gemini
 - `DEFAULT_IMAGE_URL`: image publique à publier
 - `POST_HOUR`: heure cible pour la publication
+- `PUBLISH_TARGET`: `instagram` ou `facebook`
+- `FACEBOOK_PAGE_ID`: requis si `PUBLISH_TARGET=facebook`

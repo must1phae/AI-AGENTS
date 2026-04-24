@@ -3,9 +3,10 @@ from __future__ import annotations
 import argparse
 from typing import Any
 
-from config.settings import DEFAULT_IMAGE_URL
+from config.settings import DEFAULT_IMAGE_URL, FACEBOOK_PAGE_ID, PUBLISH_TARGET
 from generator.content import generate_caption
 from optimizer.caption import optimize
+from publisher.facebook_api import publish_photo
 from publisher.instagram_api import create_media_container, publish_media, wait_for_container_ready
 
 
@@ -31,6 +32,23 @@ def run_agent(
     if not publish:
         return {"caption": caption, "image_url": selected_image_url, "published": False}
 
+    target = PUBLISH_TARGET
+    if target == "facebook":
+        print("Publishing on Facebook Page...")
+        if not FACEBOOK_PAGE_ID:
+            raise ValueError("FACEBOOK_PAGE_ID is required when PUBLISH_TARGET=facebook.")
+        result = publish_photo(FACEBOOK_PAGE_ID, selected_image_url, caption)
+        post_id = result.get("post_id") or result.get("id", "")
+        print(f"Published successfully on Facebook: {post_id}")
+        return {
+            "caption": caption,
+            "image_url": selected_image_url,
+            "post_id": post_id,
+            "published": True,
+            "target": "facebook",
+            "result": result,
+        }
+
     print("Publishing on Instagram...")
     container_id = create_media_container(selected_image_url, caption)
     wait_for_container_ready(container_id)
@@ -44,6 +62,7 @@ def run_agent(
         "container_id": container_id,
         "post_id": post_id,
         "published": True,
+        "target": "instagram",
         "result": result,
     }
 
