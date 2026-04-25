@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 from google import genai
 
 from config.settings import GEMINI_API_KEY, GEMINI_MODEL, NICHE, TONE
@@ -16,6 +18,19 @@ def _is_quota_error(error: Exception) -> bool:
     status_code = getattr(error, "status_code", None)
     message = str(error).upper()
     return status_code == 429 or "RESOURCE_EXHAUSTED" in message or "QUOTA" in message
+
+
+def _is_api_key_error(error: Exception) -> bool:
+    status_code = getattr(error, "status_code", None)
+    message = str(error).upper()
+    return (
+        status_code in (400, 401, 403)
+        and (
+            "API_KEY_INVALID" in message
+            or "API KEY EXPIRED" in message
+            or "API KEY INVALID" in message
+        )
+    )
 
 
 def _is_model_not_found_error(error: Exception) -> bool:
@@ -106,9 +121,37 @@ def generate_caption() -> str:
         raise ValueError("GEMINI_API_KEY is required to generate a caption.")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
+    hook_styles = [
+        "question choc",
+        "statistique surprenante",
+        "mythe a casser",
+        "erreur frequente",
+        "mini histoire personnelle",
+    ]
+    angles = [
+        "productivite",
+        "automatisation",
+        "creation de contenu",
+        "business",
+        "apprentissage",
+    ]
+    cta_styles = [
+        "demander une opinion",
+        "demander un exemple perso",
+        "inviter a commenter un mot-cle",
+        "proposer un mini challenge",
+    ]
+
+    selected_hook = random.choice(hook_styles)
+    selected_angle = random.choice(angles)
+    selected_cta = random.choice(cta_styles)
+
     prompt = f"""Tu es un créateur de contenu viral sur Instagram.
 Génère une caption Instagram engageante sur le thème : {NICHE}.
 Ton : {TONE}.
+Angle editoriale du jour : {selected_angle}.
+Style de hook impose : {selected_hook}.
+Style de CTA impose : {selected_cta}.
 
 Règles :
 - Hook puissant en 1ère ligne (curiosité ou chiffre)
@@ -116,13 +159,15 @@ Règles :
 - Appel à l'action à la fin
 - 1 à 2 hashtags pertinents uniquement
 - Ajoute des emojis intelligemment
+- Evite de reutiliser mot pour mot des formulations precedentes
 
 Réponds UNIQUEMENT avec la caption, rien d'autre."""
 
     try:
         response = _generate_with_model_fallback(client, prompt)
     except Exception as error:
-        if _is_quota_error(error):
+        # Keep publishing flow alive when remote LLM is unavailable.
+        if _is_quota_error(error) or _is_api_key_error(error):
             return _fallback_caption()
         raise
 
