@@ -1,6 +1,7 @@
 param(
     [string]$TaskName = "AI-AGENTS-DailyPost",
-    [string]$StartTime = "09:00"
+    [string]$StartTime = "09:00",
+    [switch]$PerAgentScheduler
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +15,28 @@ if (-not (Test-Path $pythonExe)) {
 }
 if (-not (Test-Path $mainScript)) {
     throw "Main script not found: $mainScript"
+}
+
+if ($PerAgentScheduler) {
+    $schedulerTaskName = if ([string]::IsNullOrWhiteSpace($TaskName) -or $TaskName -eq "AI-AGENTS-DailyPost") {
+        "AI-AGENTS-AgentScheduler"
+    }
+    else {
+        $TaskName
+    }
+
+    $action = New-ScheduledTaskAction -Execute $pythonExe -Argument ('"{0}" --run-scheduled' -f $mainScript)
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1)
+    $trigger.RepetitionInterval = "PT1M"
+    $trigger.RepetitionDuration = "P1D"
+
+    Register-ScheduledTask -TaskName $schedulerTaskName -Action $action -Trigger $trigger -Description "AI AGENTS per-agent scheduler" -Force | Out-Null
+
+    Write-Output "Task '$schedulerTaskName' created/updated."
+    Write-Output "Schedule: every minute"
+    Write-Output "Execute: $pythonExe"
+    Write-Output "Arguments: \"$mainScript\" --run-scheduled"
+    return
 }
 
 $timeParts = $StartTime.Split(":")

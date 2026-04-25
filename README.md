@@ -27,6 +27,13 @@ Renseigne ensuite les variables dans `.env`.
 python main.py --image-url https://example.com/image.jpg
 ```
 
+Sans `--image-url`, l'agent peut generer automatiquement une image IA selon le sujet (`NICHE`) et le ton (`TONE`).
+Pour desactiver ce comportement sur un run:
+
+```bash
+python main.py --no-auto-image
+```
+
 Test rapide de la cle Gemini uniquement:
 
 ```bash
@@ -43,12 +50,43 @@ Sans argument, le script utilise `DEFAULT_IMAGE_URL`.
 
 Si Gemini retourne une erreur de quota (429), l'agent bascule automatiquement sur une caption locale de secours pour ne pas bloquer le flux.
 
+## Dashboard multi-agent
+
+Tu peux piloter plusieurs agents depuis une interface web locale (creation, activation/desactivation, dry-run, publication):
+
+```bash
+streamlit run dashboard/app.py
+```
+
+Dans la dashboard:
+
+- Cree un ou plusieurs agents (nom, niche, ton, image URL)
+- Active `Generer image IA si URL vide` pour creer l'image automatiquement a partir du sujet
+- Active ou desactive chaque agent individuellement
+- Definis une heure de planification par agent (`Scheduler actif` + `Heure planifiee`)
+- Lance `Dry run` pour tester sans publication
+- Lance `Publier` pour poster sur la cible configuree dans `.env`
+
+Les agents sont sauvegardes automatiquement dans `dashboard/agents.json`.
+
+Tu peux aussi lancer un check scheduler manuel:
+
+```bash
+python main.py --run-scheduled
+```
+
 ## Planification
 
 ### Option Windows (Task Scheduler)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scheduler\register_windows_task.ps1 -StartTime 09:00
+```
+
+Pour le scheduler par agent (verifie chaque minute les heures configurees dans la dashboard):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scheduler\register_windows_task.ps1 -PerAgentScheduler
 ```
 
 Verifier la tache:
@@ -76,6 +114,9 @@ celery -A scheduler.tasks beat --loglevel=info
 - `IG_ACCESS_TOKEN`: token long-terme valide pour Graph API
 - `GEMINI_API_KEY`: clé API Gemini
 - `DEFAULT_IMAGE_URL`: image publique à publier
+- `AUTO_GENERATE_IMAGE`: `true` ou `false` pour autoriser la generation d'image IA automatique
+- `IMAGE_PROVIDER`: provider de generation (`pollinations` par defaut)
+- `IMAGE_SIZE`: taille image sous la forme `1200x1200`
 - `POST_HOUR`: heure cible pour la publication
 - `PUBLISH_TARGET`: `instagram` ou `facebook`
 - `FACEBOOK_PAGE_ID`: requis si `PUBLISH_TARGET=facebook`

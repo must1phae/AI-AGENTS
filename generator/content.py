@@ -39,21 +39,21 @@ def _is_model_not_found_error(error: Exception) -> bool:
     return status_code == 404 or "NOT_FOUND" in message or "IS NOT FOUND" in message
 
 
-def _fallback_caption() -> str:
-    tone_key = TONE.strip().lower()
+def _fallback_caption(niche: str, tone: str) -> str:
+    tone_key = tone.strip().lower()
     variants = {
         "viral": (
-            f"3 declics sur {NICHE} qui peuvent transformer ta semaine en 10 minutes par jour. "
+            f"3 declics sur {niche} qui peuvent transformer ta semaine en 10 minutes par jour. "
             "Le plus puissant est souvent celui que personne ne teste. Tu veux que je te donne le plan complet ? "
             "Dis MOI en commentaire. #IA #Tech"
         ),
         "educatif": (
-            f"Voici une methode simple pour progresser sur {NICHE} sans te disperser. "
+            f"Voici une methode simple pour progresser sur {niche} sans te disperser. "
             "Choisis 1 outil, applique-le 7 jours, puis mesure le resultat. "
             "Si tu veux la checklist, ecris CHECKLIST. #IA #Apprentissage"
         ),
         "storytelling": (
-            f"Il y a 30 jours, je me sentais bloque sur {NICHE}. "
+            f"Il y a 30 jours, je me sentais bloque sur {niche}. "
             "J ai change une seule habitude et tout est devenu plus clair. "
             "Tu veux que je raconte l histoire complete ? #IA #Story"
         ),
@@ -116,9 +116,12 @@ def test_gemini_connection() -> str:
     return text
 
 
-def generate_caption() -> str:
+def generate_caption(niche: str | None = None, tone: str | None = None) -> str:
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is required to generate a caption.")
+
+    selected_niche = (niche or NICHE).strip()
+    selected_tone = (tone or TONE).strip()
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     hook_styles = [
@@ -147,8 +150,8 @@ def generate_caption() -> str:
     selected_cta = random.choice(cta_styles)
 
     prompt = f"""Tu es un créateur de contenu viral sur Instagram.
-Génère une caption Instagram engageante sur le thème : {NICHE}.
-Ton : {TONE}.
+Génère une caption Instagram engageante sur le thème : {selected_niche}.
+Ton : {selected_tone}.
 Angle editoriale du jour : {selected_angle}.
 Style de hook impose : {selected_hook}.
 Style de CTA impose : {selected_cta}.
@@ -168,10 +171,10 @@ Réponds UNIQUEMENT avec la caption, rien d'autre."""
     except Exception as error:
         # Keep publishing flow alive when remote LLM is unavailable.
         if _is_quota_error(error) or _is_api_key_error(error):
-            return _fallback_caption()
+            return _fallback_caption(selected_niche, selected_tone)
         raise
 
     caption = _extract_text(response)
     if not caption:
-        return _fallback_caption()
+        return _fallback_caption(selected_niche, selected_tone)
     return caption

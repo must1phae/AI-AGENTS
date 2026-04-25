@@ -11,6 +11,13 @@ load_dotenv()
 def _get_env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
+
+def _get_bool_env(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 # xx
 IG_USER_ID = _get_env("IG_USER_ID")
 IG_ACCESS_TOKEN = _get_env("IG_ACCESS_TOKEN")
@@ -20,6 +27,9 @@ GRAPH_API_VERSION = os.getenv("GRAPH_API_VERSION", "v21.0").strip()
 BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
 DEFAULT_IMAGE_URL = os.getenv("DEFAULT_IMAGE_URL", "").strip()
+AUTO_GENERATE_IMAGE = _get_bool_env("AUTO_GENERATE_IMAGE", True)
+IMAGE_PROVIDER = os.getenv("IMAGE_PROVIDER", "pollinations").strip().lower()
+IMAGE_SIZE = os.getenv("IMAGE_SIZE", "1200x1200").strip()
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0").strip()
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "").strip()
 PUBLISH_TARGET = os.getenv("PUBLISH_TARGET", "instagram").strip().lower()
@@ -38,6 +48,9 @@ SETTINGS: dict[str, Any] = {
     "BASE_URL": BASE_URL,
     "GEMINI_MODEL": GEMINI_MODEL,
     "DEFAULT_IMAGE_URL": DEFAULT_IMAGE_URL,
+    "AUTO_GENERATE_IMAGE": AUTO_GENERATE_IMAGE,
+    "IMAGE_PROVIDER": IMAGE_PROVIDER,
+    "IMAGE_SIZE": IMAGE_SIZE,
     "REDIS_URL": REDIS_URL,
     "FACEBOOK_PAGE_ID": FACEBOOK_PAGE_ID,
     "PUBLISH_TARGET": PUBLISH_TARGET,

@@ -4,8 +4,9 @@ import argparse
 import sys
 from typing import Any
 
-from config.settings import DEFAULT_IMAGE_URL, FACEBOOK_PAGE_ID, PUBLISH_TARGET
+from config.settings import AUTO_GENERATE_IMAGE, DEFAULT_IMAGE_URL, FACEBOOK_PAGE_ID, NICHE, PUBLISH_TARGET, TONE
 from generator.content import generate_caption, test_gemini_connection
+from generator.image import generate_image_url
 from optimizer.caption import optimize
 from publisher.facebook_api import publish_photo
 from publisher.instagram_api import create_media_container, publish_media, wait_for_container_ready
@@ -15,17 +16,32 @@ def run_agent(
     image_url: str | None = None,
     publish: bool = True,
     manual_caption: str | None = None,
+    niche: str | None = None,
+    tone: str | None = None,
+    auto_image: bool | None = None,
 ) -> dict[str, Any]:
+    selected_niche = (niche or NICHE).strip()
+    selected_tone = (tone or TONE).strip()
+
     selected_image_url = image_url or DEFAULT_IMAGE_URL
+    use_auto_image = AUTO_GENERATE_IMAGE if auto_image is None else auto_image
+    if not selected_image_url and use_auto_image:
+        print("Generating image from AI prompt...")
+        selected_image_url = generate_image_url(selected_niche, selected_tone)
+        print(f"Generated image URL: {selected_image_url}")
+
     if not selected_image_url:
-        raise ValueError("No image URL provided. Set DEFAULT_IMAGE_URL or pass --image-url.")
+        raise ValueError(
+            "No image URL provided. Set DEFAULT_IMAGE_URL or pass --image-url, "
+            "or enable AUTO_GENERATE_IMAGE."
+        )
 
     if manual_caption:
         print("Using provided caption...")
         raw_caption = manual_caption
     else:
         print("Generating caption...")
-        raw_caption = generate_caption()
+        raw_caption = generate_caption(niche=selected_niche, tone=selected_tone)
     caption = optimize(raw_caption)
     print("Caption ready:")
     print(caption)
@@ -72,7 +88,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate and publish an Instagram post.")
     parser.add_argument("--image-url", default=None, help="Public URL of the image to publish.")
     parser.add_argument("--dry-run", action="store_true", help="Generate the caption without publishing.")
+    parser.add_argument("--no-auto-image", action="store_true", help="Disable automatic AI image generation.")
     parser.add_argument("--test-gemini", action="store_true", help="Test Gemini API connectivity and exit.")
+    parser.add_argument(
+        "--run-scheduled",
+        action="store_true",
+        help="Run per-agent scheduler check for agents configured in dashboard/agents.json.",
+    )
     parser.add_argument(
         "--caption",
         default=None,
@@ -93,4 +115,16 @@ if __name__ == "__main__":
             sys.exit(1)
         sys.exit(0)
 
-    run_agent(image_url=args.image_url, publish=not args.dry_run, manual_caption=args.caption)
+    if args.run_scheduled:
+        from scheduler.agent_scheduler import run_scheduled_agents
+
+        summary = run_scheduled_agents()
+        print(summary)
+        sys.exit(0)
+
+    run_agent(
+        image_url=args.image_url,
+        publish=not args.dry_run,
+        manual_caption=args.caption,
+        auto_image=not args.no_auto_image,
+    )
