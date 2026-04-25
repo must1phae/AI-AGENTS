@@ -27,8 +27,16 @@ def run_agent(
     use_auto_image = AUTO_GENERATE_IMAGE if auto_image is None else auto_image
     if not selected_image_url and use_auto_image:
         print("Generating image from AI prompt...")
-        selected_image_url = generate_image_url(selected_niche, selected_tone)
-        print(f"Generated image URL: {selected_image_url}")
+        try:
+            selected_image_url = generate_image_url(selected_niche, selected_tone)
+            print(f"Generated image URL: {selected_image_url}")
+        except Exception as e:
+            print(f"Image generation failed: {e}")
+            if DEFAULT_IMAGE_URL:
+                print(f"Falling back to DEFAULT_IMAGE_URL: {DEFAULT_IMAGE_URL}")
+                selected_image_url = DEFAULT_IMAGE_URL
+            else:
+                raise ValueError(f"Image generation failed and no fallback available: {e}")
 
     if not selected_image_url:
         raise ValueError(

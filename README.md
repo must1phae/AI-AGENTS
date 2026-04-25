@@ -50,6 +50,20 @@ Sans argument, le script utilise `DEFAULT_IMAGE_URL`.
 
 Si Gemini retourne une erreur de quota (429), l'agent bascule automatiquement sur une caption locale de secours pour ne pas bloquer le flux.
 
+### Génération d'image avec timeout et fallback
+
+L'agent utilise Pollinations API pour générer les images. Certains générateurs d'IA peuvent être lents (timeout jusqu'à 90 secondes). 
+
+- **Retry automatique** : jusqu'à 3 tentatives avec attente exponentielle (1s, 2s, 4s)
+- **Fallback** : si la génération échoue ou timeout, utilise DEFAULT_IMAGE_URL
+- **Timeout de base** : 60 secondes pour les requêtes, 90 pour la validation d'image
+
+Si tu veux désactiver la génération d'image pour une exécution:
+
+```bash
+python main.py --no-auto-image
+```
+
 ## Dashboard multi-agent
 
 Tu peux piloter plusieurs agents depuis une interface web locale (creation, activation/desactivation, dry-run, publication):
