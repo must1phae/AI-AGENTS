@@ -5,10 +5,23 @@ from google import genai
 from config.settings import GEMINI_API_KEY, GEMINI_MODEL, NICHE, TONE
 
 
+FALLBACK_MODELS = (
+    "gemini-flash-lite-latest",
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
+)
+
+
 def _is_quota_error(error: Exception) -> bool:
     status_code = getattr(error, "status_code", None)
     message = str(error).upper()
     return status_code == 429 or "RESOURCE_EXHAUSTED" in message or "QUOTA" in message
+
+
+def _is_model_not_found_error(error: Exception) -> bool:
+    status_code = getattr(error, "status_code", None)
+    message = str(error).upper()
+    return status_code == 404 or "NOT_FOUND" in message or "IS NOT FOUND" in message
 
 
 def _fallback_caption() -> str:
@@ -52,6 +65,42 @@ def _extract_text(response: object) -> str:
     return "".join(parts).strip()
 
 
+def _ordered_models() -> list[str]:
+    ordered = [GEMINI_MODEL]
+    for model in FALLBACK_MODELS:
+        if model not in ordered:
+            ordered.append(model)
+    return ordered
+
+
+def _generate_with_model_fallback(client: genai.Client, contents: str) -> object:
+    last_error: Exception | None = None
+    for model_name in _ordered_models():
+        try:
+            return client.models.generate_content(model=model_name, contents=contents)
+        except Exception as error:
+            if _is_quota_error(error) or _is_model_not_found_error(error):
+                last_error = error
+                continue
+            raise
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("No Gemini model available for request.")
+
+
+def test_gemini_connection() -> str:
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is required to test Gemini connection.")
+
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = _generate_with_model_fallback(client, "Reply only with: OK")
+    text = _extract_text(response)
+    if not text:
+        raise RuntimeError("Gemini test response is empty.")
+    return text
+
+
 def generate_caption() -> str:
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY is required to generate a caption.")
@@ -71,10 +120,7 @@ Règles :
 Réponds UNIQUEMENT avec la caption, rien d'autre."""
 
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
+        response = _generate_with_model_fallback(client, prompt)
     except Exception as error:
         if _is_quota_error(error):
             return _fallback_caption()

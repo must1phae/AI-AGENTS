@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from typing import Any
 
 from config.settings import DEFAULT_IMAGE_URL, FACEBOOK_PAGE_ID, PUBLISH_TARGET
-from generator.content import generate_caption
+from generator.content import generate_caption, test_gemini_connection
 from optimizer.caption import optimize
 from publisher.facebook_api import publish_photo
 from publisher.instagram_api import create_media_container, publish_media, wait_for_container_ready
@@ -71,6 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate and publish an Instagram post.")
     parser.add_argument("--image-url", default=None, help="Public URL of the image to publish.")
     parser.add_argument("--dry-run", action="store_true", help="Generate the caption without publishing.")
+    parser.add_argument("--test-gemini", action="store_true", help="Test Gemini API connectivity and exit.")
     parser.add_argument(
         "--caption",
         default=None,
@@ -81,4 +83,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     args = _build_parser().parse_args()
+    if args.test_gemini:
+        print("Testing Gemini connection...")
+        try:
+            response = test_gemini_connection()
+            print(f"Gemini OK: {response}")
+        except Exception as error:
+            print(f"Gemini test failed: {error}")
+            sys.exit(1)
+        sys.exit(0)
+
     run_agent(image_url=args.image_url, publish=not args.dry_run, manual_caption=args.caption)

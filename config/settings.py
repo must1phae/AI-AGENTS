@@ -18,7 +18,7 @@ GEMINI_API_KEY = _get_env("GEMINI_API_KEY")
 
 GRAPH_API_VERSION = os.getenv("GRAPH_API_VERSION", "v21.0").strip()
 BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
 DEFAULT_IMAGE_URL = os.getenv("DEFAULT_IMAGE_URL", "").strip()
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0").strip()
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID", "").strip()

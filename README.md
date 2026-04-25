@@ -27,6 +27,18 @@ Renseigne ensuite les variables dans `.env`.
 python main.py --image-url https://example.com/image.jpg
 ```
 
+Test rapide de la cle Gemini uniquement:
+
+```bash
+python main.py --test-gemini
+```
+
+Si le test echoue avec `429 RESOURCE_EXHAUSTED` ou `404 NOT_FOUND`, utilise un modele compatible dans `.env`, par exemple:
+
+```bash
+GEMINI_MODEL=gemini-flash-lite-latest
+```
+
 Sans argument, le script utilise `DEFAULT_IMAGE_URL`.
 
 Si Gemini retourne une erreur de quota (429), l'agent bascule automatiquement sur une caption locale de secours pour ne pas bloquer le flux.
